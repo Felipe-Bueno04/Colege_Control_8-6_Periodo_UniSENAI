@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model chamados {
+  id_chamado                             Int                  @id @default(autoincrement())
+  titulo                                 String               @db.VarChar(200)
+  descricao                              String               @db.Text
+  status                                 chamados_status
+  prioridade                             chamados_prioridade
+  data_abertura                          DateTime             @default(now()) @db.DateTime(0)
+  data_fechamento                        DateTime?            @db.DateTime(0)
+  data_ultima_atualizacao                DateTime             @default(now()) @db.Timestamp(0)
+  id_usuario                             Int
+  id_tecnico                             Int?
+  usuarios_chamados_id_usuarioTousuarios usuarios             @relation("chamados_id_usuarioTousuarios", fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "chamados_ibfk_1")
+  usuarios_chamados_id_tecnicoTousuarios usuarios?            @relation("chamados_id_tecnicoTousuarios", fields: [id_tecnico], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "chamados_ibfk_2")
+  historico_chamados                     historico_chamados[]
+
+  @@index([id_tecnico], map: "id_tecnico")
+  @@index([id_usuario], map: "id_usuario")
+}
+
+model historico_chamados {
+  id_historico  Int      @id @default(autoincrement())
+  id_chamado    Int
+  id_usuario    Int
+  comentario    String   @db.Text
+  data_registro DateTime @default(now()) @db.DateTime(0)
+  chamados      chamados @relation(fields: [id_chamado], references: [id_chamado], onDelete: NoAction, onUpdate: NoAction, map: "historico_chamados_ibfk_1")
+  usuarios      usuarios @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "historico_chamados_ibfk_2")
+
+  @@index([id_chamado], map: "id_chamado")
+  @@index([id_usuario], map: "id_usuario")
+}
+
+model usuarios {
+  id_usuario                             Int                  @id @default(autoincrement())
+  nome                                   String               @db.VarChar(100)
+  email                                  String               @unique(map: "email") @db.VarChar(100)
+  senha                                  String               @db.VarChar(255)
+  perfil                                 usuarios_perfil
+  ativo                                  Boolean              @default(true)
+  chamados_chamados_id_usuarioTousuarios chamados[]           @relation("chamados_id_usuarioTousuarios")
+  chamados_chamados_id_tecnicoTousuarios chamados[]           @relation("chamados_id_tecnicoTousuarios")
+  historico_chamados                     historico_chamados[]
+}
+
+enum chamados_status {
+  ABERTO
+  EM_ANDAMENTO
+  RESOLVIDO
+  FECHADO
+}
+
+enum chamados_prioridade {
+  BAIXA
+  MEDIA
+  ALTA
+}
+
+enum usuarios_perfil {
+  CLIENTE
+  TECNICO
+}
